@@ -1,5 +1,4 @@
 import chrome from 'chrome-aws-lambda';
-import lighthouse from 'lighthouse';
 
 const KV_REST_API_URL = process.env.KV_REST_API_URL;
 const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -26,6 +25,9 @@ export default async function handler(req, res) {
     if (cachedScores && cachedScores.data) {
       return res.json(cachedScores.data);
     }
+
+    // Dynamically import Lighthouse
+    const { default: lighthouse } = await import('lighthouse');
 
     // Launch headless Chrome
     const browser = await chrome.puppeteer.launch({
