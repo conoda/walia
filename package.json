@@ -1,13 +1,18 @@
 {
   "name": "metrics",
   "version": "1.0.0",
-  "type": "module",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "private": true,
   "dependencies": {
+    "chrome-aws-lambda": "^10.1.0",
     "lighthouse": "^12.2.0",
-    "puppeteer": "^23.2.1"
+    "lighthouse-logger": "^1.2.0",
+    "puppeteer-core": "^10.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "prettier": "^2.0.5"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }

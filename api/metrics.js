@@ -1,36 +1,71 @@
-// api/metrics.js
-import puppeteer from 'puppeteer';
-import lighthouse from 'lighthouse';
-import { URL } from 'url';
+const chromeLambda = require('chrome-aws-lambda');
+const puppeteerCore = require('puppeteer-core');
+const logger = require('lighthouse-logger');
 
-export default async function handler(req, res) {
+// Define flags and logger
+const flags = { logLevel: 'info', output: 'json' };
+logger.setLevel(flags.logLevel);
+
+// Function to launch browser
+const getBrowser = async () => {
+  return puppeteerCore.launch({
+    args: chromeLambda.args,
+    defaultViewport: chromeLambda.defaultViewport,
+    executablePath: await chromeLambda.executablePath,
+    headless: true,
+  });
+};
+
+// Handler function
+module.exports = async (req, res) => {
+  const url = req.query.url;
+
+  if (!url) {
+    return res.status(400).json({ error: 'No URL provided' });
+  }
+
+  console.log(`Starting request for URL :: ${url}`);
+
+  const executablePath = await chromeLambda.executablePath;
+console.log(`Executable Path: ${executablePath}`);
+
+  const browser = await getBrowser();
+  const endpoint = browser.wsEndpoint();
+  const port = endpoint.split(':')[2].split('/')[0];
+
+  console.log(`Endpoint :: ${endpoint}`);
+  console.log(`Port :: ${port}`);
+  console.log('Starting test run...');
+
+  // Dynamically import lighthouse
   try {
-    const { url, commitHash } = req.query;
-    if (!url || !commitHash) {
-      return res.status(400).json({ error: 'URL and commitHash query parameters are required' });
-    }
-
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      headless: true
-    });
-
-    const { port } = new URL(browser.wsEndpoint());
-    const result = await lighthouse(url, { port }, 'json');
-    await browser.close();
-
-    const report = JSON.parse(result.report);
-    const scores = {
-      performance: report.categories.performance.score * 100,
-      accessibility: report.categories.accessibility.score * 100,
-      'best-practices': report.categories['best-practices'].score * 100,
-      seo: report.categories.seo.score * 100,
+    const { default: lighthouse } = await import('lighthouse');
+    
+    const config = {
+      extends: 'lighthouse:default',
     };
 
-    res.setHeader('Content-Type', 'application/json');
-    res.json(scores);
+    const results = await lighthouse(url, { ...flags, port }, config);
+    console.log('Test run complete!');
+
+    await browser.close();
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 's-maxage=60');
+
+    // Extract key scores from results
+    const report = JSON.parse(results.report);
+    const { performance, accessibility, 'best-practices': bestPractices, seo } = report.categories;
+    const scores = {
+      performance: performance.score * 100,
+      accessibility: accessibility.score * 100,
+      bestPractices: bestPractices.score * 100,
+      seo: seo.score * 100,
+    };
+
+    return res.status(200).json(scores);
   } catch (error) {
-    console.error('An error occurred:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error running Lighthouse:', error);
+    return res.status(500).json({ error: 'Error running Lighthouse', details: error.message });
   }
-}
+};
