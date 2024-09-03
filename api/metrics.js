@@ -1,3 +1,4 @@
+// api/metrics.js
 import chrome from 'chrome-aws-lambda';
 
 const KV_REST_API_URL = process.env.KV_REST_API_URL;
