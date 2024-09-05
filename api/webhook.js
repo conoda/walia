@@ -9,7 +9,11 @@ async function verifySignature(req) {
     .update(payload)
     .digest('hex');
   
-  return signature === req.headers['x-vercel-signature']; // Compare with the signature from headers
+  if (signature === req.headers['x-vercel-signature']) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 // Verify webhook signature
