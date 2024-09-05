@@ -54,8 +54,7 @@ export default async function handler(req, res) {
     // Trigger fetch requests for all categories concurrently using Promise.all
     const results = await Promise.all(categories.map(fetchCategoryData));
 
-    const payload = await json(req)
-    console.log(payload)
+    console.log(req)
     const d_id = payload.deployment?.id || '';
 
     // Prepare data to insert into the database
