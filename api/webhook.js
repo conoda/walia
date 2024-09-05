@@ -16,9 +16,13 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Unauthorized access' });
   }
 
+  let live
+
   // Commit hash required to store the data
   if (!commitHash) {
-    return res.status(403).json({ error: 'commit hash is required' });
+    live = true
+  } else {
+    live = false
   }
 
   const categories = ['PERFORMANCE', 'BEST_PRACTICES', 'ACCESSIBILITY', 'SEO'];
@@ -50,10 +54,14 @@ export default async function handler(req, res) {
     // Trigger fetch requests for all categories concurrently using Promise.all
     const results = await Promise.all(categories.map(fetchCategoryData));
 
+    // Get deployment ID from webhook payload
+    const payload = req.body; // Assuming the payload is sent as JSON
+    const d_id = payload.deployment?.id || '';
+
     // Prepare data to insert into the database
     const data = {
       url,
-      deployment_id: '', // Leave blank for cron job scenario
+      deployment_id: d_id, // Leave blank for cron job scenario
       commit_hash: commitHash,
       live: false, // Set to false for webhook trigger
       performance: results[0],
