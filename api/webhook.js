@@ -54,8 +54,7 @@ export default async function handler(req, res) {
     // Trigger fetch requests for all categories concurrently using Promise.all
     const results = await Promise.all(categories.map(fetchCategoryData));
 
-    // Get deployment ID from webhook payload
-    const payload = req.body; // Assuming the payload is sent as JSON
+    const payload = await json(req)
     console.log(payload)
     const d_id = payload.deployment?.id || '';
 
