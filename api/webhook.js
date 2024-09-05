@@ -56,6 +56,7 @@ export default async function handler(req, res) {
 
     // Get deployment ID from webhook payload
     const payload = req.body; // Assuming the payload is sent as JSON
+    console.log(payload)
     const d_id = payload.deployment?.id || '';
 
     // Prepare data to insert into the database
