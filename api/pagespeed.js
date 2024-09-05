@@ -1,11 +1,4 @@
 import crypto from 'crypto';
-import { Client } from '@libsql/client';
-
-// Initialize the database client
-const client = new Client({
-  url: process.env.TURSO_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN
-});
 
 // Function to verify the webhook signature
 async function verifySignature(req) {
@@ -20,37 +13,23 @@ async function verifySignature(req) {
 
 export default async function handler(req, res) {
   const { PSI_API_KEY, SECURE_KEY } = process.env;
-  const { key, url } = req.query; // query parameters
+  const { key, url, commitHash } = req.query; // query parameters
   const strategy = 'mobile';
 
-  // Check if the request is from a cron job or a webhook
-  const isCronJob = req.headers['x-vercel-deployment-id'] === undefined; // Adjust based on your actual check
+  // Verify webhook signature
+  const isVerified = await verifySignature(req);
+  if (!isVerified) {
+    return res.status(403).json({ error: 'Invalid webhook signature' });
+  }
 
-  // For webhook, verify the signature
-  if (!isCronJob) {
-    const isVerified = await verifySignature(req);
-    if (!isVerified) {
-      return res.status(403).json({ error: 'Invalid webhook signature' });
-    }
+  // Validate the provided secure key
+  if (key !== SECURE_KEY) {
+    return res.status(403).json({ error: 'Unauthorized access' });
+  }
 
-    // Extract deployment information from payload
-    const payload = req.body;
-    const { deployment } = payload;
-    
-    if (!deployment || !deployment.id || !url) {
-      return res.status(400).json({ error: 'Deployment ID or URL is missing' });
-    }
-
-    var deploymentId = deployment.id;
-
-    // Validate the provided secure key
-    if (key !== SECURE_KEY) {
-      return res.status(403).json({ error: 'Unauthorized access' });
-    }
-
-  } else {
-    // For cron job, set live flag and leave deployment ID blank
-    deploymentId = '';
+  // Commit hash required to store the data
+  if (!commitHash) {
+    return res.status(403).json({ error: 'Commit hash is required' });
   }
 
   const categories = ['PERFORMANCE', 'BEST_PRACTICES', 'ACCESSIBILITY', 'SEO'];
@@ -82,28 +61,16 @@ export default async function handler(req, res) {
     // Trigger fetch requests for all categories concurrently using Promise.all
     const results = await Promise.all(categories.map(fetchCategoryData));
 
-    // Prepare data to insert into the database
-    const data = {
-      url: url,
-      deploymentId: deploymentId,
-      live: isCronJob, // Set "live" to true for cron jobs
+    // Return an object with each category's score
+    res.status(200).json({
       PERFORMANCE: results[0],
       BEST_PRACTICES: results[1],
       ACCESSIBILITY: results[2],
       SEO: results[3],
-    };
-
-    // Insert the data into the database
-    await client.execute(`
-      INSERT INTO your_table_name (url, deployment_id, live, performance, best_practices, accessibility, seo)
-      VALUES (:url, :deploymentId, :live, :performance, :bestPractices, :accessibility, :seo)
-    `, data);
-
-    // Return a success response
-    res.status(200).json(data);
+    });
   } catch (error) {
     // Handle errors
-    console.error('Error fetching PageSpeed Insights data or saving to database:', error);
-    res.status(500).json({ error: 'Failed to fetch PageSpeed Insights data or save to database' });
+    console.error('Error fetching PageSpeed Insights data:', error);
+    res.status(500).json({ error: 'Failed to fetch PageSpeed Insights data' });
   }
 }
