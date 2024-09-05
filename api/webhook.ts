@@ -1,5 +1,6 @@
 import { createClient } from "@libsql/client";
-import crypto from 'node:crypto';
+
+const crypto = await import('crypto');
 
 // Function to verify the webhook signature
 async function verifySignature(req) {
