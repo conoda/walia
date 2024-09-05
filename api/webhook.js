@@ -1,4 +1,22 @@
 import { createClient } from "@libsql/client";
+import crypto from 'crypto';
+
+// Function to verify the webhook signature
+async function verifySignature(req) {
+  const payload = await req.text(); // Get raw body text to hash
+  const signature = crypto
+    .createHmac('sha1', process.env.WEBHOOK_SECRET) // Use the secret from env variables
+    .update(payload)
+    .digest('hex');
+  
+  return signature === req.headers['x-vercel-signature']; // Compare with the signature from headers
+}
+
+// Verify webhook signature
+const isVerified = await verifySignature(req);
+if (!isVerified) {
+  return res.status(403).json({ error: 'Invalid webhook signature' });
+}
 
 // Create the client instance
 const client = createClient({
@@ -54,7 +72,7 @@ export default async function handler(req, res) {
     // Trigger fetch requests for all categories concurrently using Promise.all
     const results = await Promise.all(categories.map(fetchCategoryData));
 
-    console.log(req.text())
+    console.log(req.headers)
     const d_id = payload.deployment?.id || '';
 
     // Prepare data to insert into the database
