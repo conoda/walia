@@ -20,10 +20,10 @@ export default async function handler(req, res) {
 
   // Commit hash required to store the data
   if (!commitHash) {
-    live = true
+    live = 'true'
   } else {
-    live = false
-    commitHash = 0
+    live = 'false'
+    commitHash = '0'
   }
 
   const categories = ['PERFORMANCE', 'BEST_PRACTICES', 'ACCESSIBILITY', 'SEO'];
