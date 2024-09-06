@@ -16,13 +16,13 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Unauthorized access' });
   }
 
-  let live
+  let is_live
 
   // Commit hash required to store the data
   if (!commitHash) {
-    live = 'true'
+    is_live = 'true'
   } else {
-    live = 'false'
+    is_live = 'false'
     commitHash = '0'
   }
 
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       url,
       deployment_id: d_id, // Leave blank for cron job scenario
       commit_hash: commitHash,
-      live: false, // Set to false for webhook trigger
+      live: is_live, // Set to false for webhook trigger
       performance: results[0],
       best_practices: results[1],
       accessibility: results[2],
