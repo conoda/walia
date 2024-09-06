@@ -6,26 +6,38 @@ const client = createClient({
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
+export async function getLastCommitHash(url) {
+  const apiToken = process.env.VERCEL_TOKEN; 
+
+  // Fetch deployment details from Vercel API
+  const response = await fetch(`https://api.vercel.com/v13/deployments/${url}`, {
+    headers: {
+      'Authorization': `Bearer ${apiToken}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch deployment details');
+  }
+
+  const deployment = await response.json();
+
+  // Extract the commit hash from the response
+  if (deployment.gitSource && deployment.gitSource.sha) {
+    return deployment.gitSource.sha;
+  } else {
+    throw new Error('Commit hash not found in the deployment details');
+  }
+}
+
 export default async function handler(req, res) {
   const { PSI_API_KEY, SECURE_KEY } = process.env;
   const { key, url, commitHash } = req.query; // Query parameters
   const strategy = 'mobile';
 
-  const d_id = req.headers['x-vercel-id'] || '';
-
   // Validate the provided secure key
   if (key !== SECURE_KEY) {
     return res.status(403).json({ error: 'Unauthorized access' });
-  }
-
-  let is_live
-
-  // Commit hash required to store the data
-  if (!commitHash) {
-    is_live = 'true'
-  } else {
-    is_live = 'false'
-    commitHash = '0'
   }
 
   const categories = ['PERFORMANCE', 'BEST_PRACTICES', 'ACCESSIBILITY', 'SEO'];
@@ -59,12 +71,12 @@ export default async function handler(req, res) {
 
     console.log('results: '+ results)
 
-    console.log('d_id: '+ d_id)
+    const commitHash = await getLastCommitHash(url)
 
     // Prepare data to insert into the database
     const data = {
       url: url.toString(),
-      deployment_id: d_id.toString(), // Leave blank for cron job scenario
+      deployment_id: , // Leave blank for cron job scenario
       commit_hash: commitHash.toString(),
       live: is_live.toString(), // Set to false for webhook trigger
       performance: results[0].toString(),
@@ -76,14 +88,12 @@ export default async function handler(req, res) {
     // Insert data into the database
     await client.execute({
       sql: `
-        INSERT INTO pagespeed (url, deployment_id, commit_hash, live, performance, best_practices, accessibility, seo, created_at)
+        INSERT INTO pagespeed (url, commit_hash, performance, best_practices, accessibility, seo, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `,
       args: [
         data.url,
-        data.deployment_id,
         data.commit_hash,
-        data.live,
         data.performance,
         data.best_practices,
         data.accessibility,
