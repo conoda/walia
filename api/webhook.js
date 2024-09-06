@@ -11,6 +11,8 @@ export default async function handler(req, res) {
   const { key, url, commitHash } = req.query; // Query parameters
   const strategy = 'mobile';
 
+  const d_id = req.headers['x-vercel-id'] || '';
+
   // Validate the provided secure key
   if (key !== SECURE_KEY) {
     return res.status(403).json({ error: 'Unauthorized access' });
@@ -47,8 +49,6 @@ export default async function handler(req, res) {
       SEO: data.lighthouseResult.categories.seo?.score * 100
     };
 
-    console.log('scores: '+ scores)
-
     // Return the score for the requested category
     return scores[category];
   };
@@ -58,8 +58,6 @@ export default async function handler(req, res) {
     const results = await Promise.all(categories.map(fetchCategoryData));
 
     console.log('results: '+ results)
-
-    const d_id = req.headers['x-vercel-deployment-id'] || '';
 
     console.log('d_id: '+ d_id)
 
