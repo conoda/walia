@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     // Trigger fetch requests for all categories concurrently using Promise.all
     const results = await Promise.all(categories.map(fetchCategoryData));
 
-    const d_id = req.headers['x-vercel-deployment-id'];
+    const d_id = req.headers['x-vercel-deployment-id'] || '';
 
     // Prepare data to insert into the database
     const data = {
