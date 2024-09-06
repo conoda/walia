@@ -8,12 +8,14 @@ const client = createClient({
 
 export async function getLastCommitHash(url) {
 
-  console.log('fetching commit for: '+ url)
+  const formattedUrl = url.replace(/^https?:\/\//, '')
+
+  console.log('fetching commit for: '+ formattedUrl)
 
   const apiToken = process.env.WALIA_VERCEL_TOKEN; 
 
   // Fetch deployment details from Vercel API
-  const response = await fetch(`https://api.vercel.com/v13/deployments/${url}`, {
+  const response = await fetch(`https://api.vercel.com/v13/deployments/${formattedUrl}`, {
     headers: {
       'Authorization': `Bearer ${apiToken}`
     }
