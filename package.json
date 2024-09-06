@@ -2,6 +2,9 @@
   "name": "walia",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "test": "vercel dev"
+  },
   "dependencies": {
     "@libsql/client": "^0.10.0"
   },

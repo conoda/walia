@@ -1,28 +1,5 @@
 import { createClient } from "@libsql/client";
 
-const crypto = await import('crypto');
-
-// Function to verify the webhook signature
-async function verifySignature(req) {
-  const payload = await req.text(); // Get raw body text to hash
-  const signature = crypto
-    .createHmac('sha1', process.env.WEBHOOK_SECRET) // Use the secret from env variables
-    .update(payload)
-    .digest('hex');
-  
-  if (signature === req.headers['x-vercel-signature']) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-// Verify webhook signature
-const isVerified = await verifySignature(req);
-if (!isVerified) {
-  return res.status(403).json({ error: 'Invalid webhook signature' });
-}
-
 // Create the client instance
 const client = createClient({
   url: process.env.TURSO_DATABASE_URL,
@@ -77,8 +54,7 @@ export default async function handler(req, res) {
     // Trigger fetch requests for all categories concurrently using Promise.all
     const results = await Promise.all(categories.map(fetchCategoryData));
 
-    console.log(req.headers)
-    const d_id = payload.deployment?.id || '';
+    const d_id = req.headers['x-vercel-deployment-id'] || '';
 
     // Prepare data to insert into the database
     const data = {
