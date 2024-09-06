@@ -76,9 +76,7 @@ export default async function handler(req, res) {
     // Prepare data to insert into the database
     const data = {
       url: url.toString(),
-      deployment_id: , // Leave blank for cron job scenario
       commit_hash: commitHash.toString(),
-      live: is_live.toString(), // Set to false for webhook trigger
       performance: results[0].toString(),
       best_practices: results[1].toString(),
       accessibility: results[2].toString(),
@@ -89,7 +87,7 @@ export default async function handler(req, res) {
     await client.execute({
       sql: `
         INSERT INTO pagespeed (url, commit_hash, performance, best_practices, accessibility, seo, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `,
       args: [
         data.url,
