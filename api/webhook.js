@@ -59,7 +59,7 @@ export default async function handler(req, res) {
 
     // Prepare data to insert into the database
     const data = {
-      url.toString(),
+      url: url.toString(),
       deployment_id: d_id.toString(), // Leave blank for cron job scenario
       commit_hash: commitHash.toString(),
       live: is_live.toString(), // Set to false for webhook trigger
