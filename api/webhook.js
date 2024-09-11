@@ -60,11 +60,11 @@ export default async function handler(req, res) {
 
     // Extract the score based on the category
     const scores = {
-      PERFORMANCE: data.lighthouseResult.categories.performance?.score * 100,
-      BEST_PRACTICES: data.lighthouseResult.categories['best-practices']?.score * 100,
-      ACCESSIBILITY: data.lighthouseResult.categories.accessibility?.score * 100,
-      SEO: data.lighthouseResult.categories.seo?.score * 100
-    };
+      PERFORMANCE: Math.round(data.lighthouseResult.categories.performance?.score * 100),
+      BEST_PRACTICES: Math.round(data.lighthouseResult.categories['best-practices']?.score * 100),
+      ACCESSIBILITY: Math.round(data.lighthouseResult.categories.accessibility?.score * 100),
+      SEO: Math.round(data.lighthouseResult.categories.seo?.score * 100)
+    };    
 
     // Return the score for the requested category
     return scores[category];
